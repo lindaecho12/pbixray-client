@@ -1,0 +1,35 @@
+{
+  "name": "pbixray-mcp-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pbixray-mcp-client": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "dev": "tsc -w -p .",
+    "start": "node dist/cli.js",
+    "clean": "rimraf dist",
+    "lint": "eslint 'src/**/*.{ts,tsx}' --max-warnings=0"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@anthropic-ai/sdk": "^0.26.1",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.4.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "rimraf": "^5.0.5"
+  }
+}

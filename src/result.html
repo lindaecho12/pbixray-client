@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Performance Executive Summary</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+
+        .slide {
+            width: 1200px;
+            height: 800px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            color: #2c3e50;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .header .period {
+            font-size: 18px;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            flex-grow: 1;
+        }
+
+        .metrics-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 5px solid #667eea;
+        }
+
+        .insights-section {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 5px solid #e53e3e;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 8px;
+        }
+
+        .metric-label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .metric-value {
+            font-weight: 700;
+            font-size: 18px;
+            color: #667eea;
+        }
+
+        .insight-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 8px;
+            border-left: 3px solid #e53e3e;
+        }
+
+        .insight-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .insight-desc {
+            color: #495057;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .footer .recommendation {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            display: inline-block;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-good { background: #48bb78; }
+        .status-warning { background: #ed8936; }
+        .status-critical { background: #e53e3e; }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="header">
+            <h1>📊 Sales Performance Executive Summary</h1>
+            <div class="period">July 2017 - January 2018 | Reseller Channel Analysis</div>
+        </div>
+
+        <div class="content">
+            <div class="metrics-section">
+                <h2 class="section-title">🎯 Key Metrics</h2>
+
+                <div class="metric-item">
+                    <span class="metric-label">Total Transactions</span>
+                    <span class="metric-value">121,253</span>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-label">Active Resellers</span>
+                    <span class="metric-value">636</span>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-label">Product Portfolio</span>
+                    <span class="metric-value">350 Products</span>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-label">Average Unit Price</span>
+                    <span class="metric-value">$419.46</span>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-label">
+                        <span class="status-indicator status-critical"></span>
+                        Gross Margin
+                    </span>
+                    <span class="metric-value" style="color: #e53e3e;">1.5%</span>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-label">
+                        <span class="status-indicator status-good"></span>
+                        Avg. Delivery Time
+                    </span>
+                    <span class="metric-value" style="color: #48bb78;">7-10 Days</span>
+                </div>
+            </div>
+
+            <div class="insights-section">
+                <h2 class="section-title">💡 Strategic Insights</h2>
+
+                <div class="insight-item">
+                    <div class="insight-title">🏢 B2B Reseller Dependency</div>
+                    <div class="insight-desc">100% of transactions through reseller network. High channel concentration risk but strong partnership model.</div>
+                </div>
+
+                <div class="insight-item">
+                    <div class="insight-title">💰 Margin Pressure Critical</div>
+                    <div class="insight-desc">1.5% gross margin indicates commodity pricing. Urgent need for cost optimization or value-added services.</div>
+                </div>
+
+                <div class="insight-item">
+                    <div class="insight-title">📈 Scale Advantage</div>
+                    <div class="insight-desc">High transaction volume (121K+) provides negotiating power with suppliers and operational efficiency opportunities.</div>
+                </div>
+
+                <div class="insight-item">
+                    <div class="insight-title">🎯 Pricing Standardization</div>
+                    <div class="insight-desc">Consistent pricing across products suggests potential for dynamic pricing strategies to improve margins.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="recommendation">
+                🚀 Priority Action: Implement margin improvement initiative targeting 5% gross margin within 12 months
+            </div>
+        </div>
+    </div>
+</body>
+</html>
