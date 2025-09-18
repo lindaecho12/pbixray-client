@@ -153,7 +153,7 @@ async function interactive(opts: CliOptions) {
         }
       }
       if (!usedTool) break;
-  response = await runAnthropic(messages, chosenModel, maxTokens);
+      response = await runAnthropic(messages, chosenModel, maxTokens);
     }
 
     return finalParts.join('\n');
