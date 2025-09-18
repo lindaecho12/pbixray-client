@@ -1,14 +1,13 @@
-# PBIXRay MCP Client (TypeScript, SDK Based)
+# PBIXRay MCP Client (TypeScript)
 
-A Node.js TypeScript client that connects to a running PBIXRay MCP server using the official `@modelcontextprotocol/sdk` Streamable HTTP client transport (aligned with the reference example you provided).
+Minimal interactive client for a running PBIXRay MCP server using the official `@modelcontextprotocol/sdk` Streamable HTTP transport and Anthropic Claude for natural language questions about a PBIX model.
 
-## Features
-- Interactive console chat using Anthropic Claude
-- Uses official MCP SDK `Client` + `StreamableHTTPClientTransport`
-- PBIX tool invocation (`load_pbix_file`, `get_model_summary`, `get_tables`)
-- Type a natural language question; type `exit` to quit
- - Model fallback & listing (`--model`, `--list-models`)
- - Configurable max output tokens (`--max-tokens`, `ANTHROPIC_MAX_TOKENS`)
+## What It Does
+- Connects to PBIXRay MCP server (SSE transport)
+- Automatically loads an optional PBIX file
+- Auto-discovers the latest Anthropic model (via raw `/v1/models`) and uses it
+- Lets you ask free-form questions; invokes MCP tools when the model requests them
+- Type `exit` to quit
 
 ## Transport
 Relies on the SDK's built-in Streamable HTTP transport (SSE based). No custom read/write endpoint management code remains; previous custom transport was removed in favor of the standard implementation.
@@ -24,49 +23,27 @@ npm run build
 ```
 
 ## Run (after build)
-Create a `.env` file in project root:
+Create a `.env` file in the project root:
 ```
 ANTHROPIC_API_KEY=your_key_here
 ```
-Then start interactive client:
+Example run (matches your local paths):
 ```powershell
-node dist/cli.js --url http://127.0.0.1:5173 --mount-path /mcp --file "demo/AdventureWorks Sales.pbix"
+node dist/cli.js --url http://127.0.0.1:5174 --mount-path /mcp --file "C:\Projects\pbixray-mcp-server\demo\AdventureWorks Sales.pbix"
 ```
-Ask questions about the loaded PBIX model. Type `exit` to quit.
+Ask questions about the model (e.g. "Summarize sales trends"). Type `exit` to leave.
 
 ### Flags
 ```
 --url <url>          Base server URL (default http://127.0.0.1:5173)
 --mount-path <path>  Mount path (default /mcp)
---file <pbix>        Optional PBIX file to load after connecting
---model <name>       Anthropic model to try first (overrides env)
---list-models        List available Anthropic models then exit
---max-tokens <n>     Max output tokens (default 1000; env override)
---verbose            Verbose transport logging
+--file <pbix>        PBIX file to load after connecting
+--max-tokens <n>     (Optional) Max output tokens (default 1000 or env ANTHROPIC_MAX_TOKENS)
+--verbose            Verbose logging
 ```
 
-### Model & Token Configuration
-Model resolution order:
-1. `--model` flag (if provided)
-2. `ANTHROPIC_MODEL` environment variable
-3. Internal fallback rotation list (e.g. `claude-3-5-sonnet-20240620`, older Sonnet / Haiku variants)
-
-Token limit resolution order:
-1. `--max-tokens` flag
-2. `ANTHROPIC_MAX_TOKENS` environment variable
-3. Default: `1000`
-
-List available models (SDK or raw HTTP fallback):
-```powershell
-node dist/cli.js --list-models
-```
-
-Run specifying model and token limit:
-```powershell
-node dist/cli.js --url http://127.0.0.1:5173 --mount-path /mcp --file "demo/AdventureWorks Sales.pbix" --model claude-3-5-sonnet-20240620 --max-tokens 2000
-```
-
-If the chosen model returns a not_found_error, the client automatically advances through its fallback list (verbose mode logs each attempt).
+### Model Selection (Automatic)
+The client calls `GET https://api.anthropic.com/v1/models`, filters for modern Claude families (sonnet / opus / haiku), and picks the lexicographically latest ID.
 
 ### Troubleshooting
 If connection fails:
@@ -99,8 +76,8 @@ async function example() {
 }
 ```
 
-## Adjusting Transport
-If your server requires auth headers, extend construction of `StreamableHTTPClientTransport` (the SDK allows header injection—if not directly, wrap fetch globally or patch the transport creation).
+## Adjusting Transport / Auth
+If the MCP server requires auth headers, wrap or subclass the SDK transport to inject headers (not included here to keep the client minimal).
 
 ## License
 Internal / Unlicensed (adjust as needed).

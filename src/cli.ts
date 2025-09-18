@@ -10,67 +10,42 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { Anthropic } from '@anthropic-ai/sdk';
 import https from 'node:https';
 
-interface CliOptions { url: string; mountPath: string; file?: string; verbose?: boolean; model?: string; listModels?: boolean; maxTokens?: string }
+interface CliOptions { url: string; mountPath: string; file?: string; verbose?: boolean; maxTokens?: string }
 
 loadEnv();
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
-const DEFAULT_MODEL_CANDIDATES = [
-  'claude-3-5-sonnet-20241022', // earlier naming
-  'claude-sonnet-4-20250514',   // newer naming per your edit
-  'claude-3-5-sonnet-latest'
-];
-
-async function listAvailableModels(anthropic: Anthropic, verbose: boolean) {
-  try {
-    // Anthropic SDK may not yet expose a direct list endpoint in all versions; attempt, else advise.
-    // @ts-ignore attempt dynamic method if present
-    if (anthropic.models?.list) {
-      // @ts-ignore
-      const iterator = await anthropic.models.list();
-      const names: string[] = [];
-      // Some SDKs return an async iterable; support minimal shapes
-      for await (const m of iterator) {
-        if (m?.id) names.push(m.id);
+async function fetchLatestAnthropicModel(verbose: boolean): Promise<string> {
+  const apiKey = ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set.');
+  const data: any = await new Promise((resolve, reject) => {
+    const req = https.request({
+      method: 'GET',
+      host: 'api.anthropic.com',
+      path: '/v1/models',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
       }
-      return names;
-    }
-    // Fallback: raw HTTP request to Anthropic models endpoint
-    const apiKey = ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      console.warn('No API key for raw model listing fallback.');
-      return [];
-    }
-    const data: any = await new Promise((resolve, reject) => {
-      const req = https.request({
-        method: 'GET',
-        host: 'api.anthropic.com',
-        path: '/v1/models',
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01'
-        }
-      }, res => {
-        let body = '';
-        res.on('data', c => body += c);
-        res.on('end', () => {
-          try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
-        });
+    }, res => {
+      let body = '';
+      res.on('data', c => body += c);
+      res.on('end', () => {
+        try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
       });
-      req.on('error', reject);
-      req.end();
     });
-    if (data && Array.isArray(data.data)) {
-      const names = data.data.map((m: any) => m.id).filter(Boolean);
-      if (verbose) console.log('[models] fetched via raw HTTP');
-      return names;
-    }
-    console.warn('Unexpected model list response shape.');
-    return [];
-  } catch (e: any) {
-    console.error('Failed to list models:', e?.message || e);
-    return [];
-  }
+    req.on('error', reject);
+    req.end();
+  });
+  if (!data || !Array.isArray(data.data)) throw new Error('Unexpected /v1/models response shape');
+  const models = data.data.map((m: any) => m.id).filter((id: string) => typeof id === 'string');
+  if (!models.length) throw new Error('No models returned from Anthropic');
+  // Heuristic: choose lexicographically latest that contains 'sonnet' or 'opus' or 'haiku'; else fallback to last
+  const prioritized = models.filter((m: string) => /(sonnet|opus|haiku)/i.test(m));
+  const candidates = prioritized.length ? prioritized : models;
+  const latest = [...candidates].sort().pop() as string; // lexicographic latest
+  if (verbose) console.log('[model] selected latest model:', latest);
+  return latest;
 }
 
 async function interactive(opts: CliOptions) {
@@ -111,21 +86,12 @@ async function interactive(opts: CliOptions) {
 
   const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
-  if ((opts as any).listModels) {
-    const models = await listAvailableModels(anthropic, !!opts.verbose);
-    if (models.length) {
-      console.log('\nAvailable models:');
-      for (const m of models) console.log(' -', m);
-      // show which defaults are valid
-      const validDefaults = DEFAULT_MODEL_CANDIDATES.filter(m => models.includes(m));
-      if (validDefaults.length) {
-        console.log('\nUsable default candidates: ' + validDefaults.join(', '));
-      } else {
-        console.log('\nNone of the built-in candidates are in your model list. Use --model to pick one above.');
-      }
-    } else {
-      console.log('No models returned. Provide --model manually.');
-    }
+  // Determine latest model automatically
+  let latestModel: string;
+  try {
+    latestModel = await fetchLatestAnthropicModel(!!opts.verbose);
+  } catch (e: any) {
+    console.error('Failed to resolve latest Anthropic model:', e?.message || e);
     await client.close();
     return;
   }
@@ -136,23 +102,8 @@ async function interactive(opts: CliOptions) {
     toolsResp = await client.listTools();
   }
 
-  const failedModels = new Set<string>();
   async function runAnthropic(messages: any[], model: string, maxTokens: number): Promise<any> {
-    try {
-      return await anthropic.messages.create({ model, max_tokens: maxTokens, messages, tools });
-    } catch (err: any) {
-      if (err?.error?.type === 'not_found_error') {
-        failedModels.add(model);
-        const rotation = [model, ...DEFAULT_MODEL_CANDIDATES].filter((m, i, arr) => arr.indexOf(m) === i);
-        const next = rotation.find(m => !failedModels.has(m));
-        if (next) {
-          if (opts.verbose) console.warn(`[model] Fallback from ${model} -> ${next}`);
-          return await runAnthropic(messages, next, maxTokens);
-        }
-        throw new Error(`All candidate models unavailable: ${Array.from(failedModels).join(', ')}`);
-      }
-      throw err;
-    }
+    return anthropic.messages.create({ model, max_tokens: maxTokens, messages, tools });
   }
 
   const defaultMaxTokens = (() => {
@@ -162,7 +113,7 @@ async function interactive(opts: CliOptions) {
   })();
 
   async function processQuery(query: string) {
-    const chosenModel = opts.model || process.env.ANTHROPIC_MODEL || DEFAULT_MODEL_CANDIDATES[0];
+  const chosenModel = latestModel;
     const maxTokens = (() => {
       if (opts.maxTokens && !Number.isNaN(Number(opts.maxTokens))) return Number(opts.maxTokens);
       return defaultMaxTokens;
@@ -232,8 +183,7 @@ program
   .option('--url <url>', 'Base server URL', 'http://127.0.0.1:5173')
   .option('--mount-path <path>', 'Mount path', '/mcp')
   .option('--file <pbix>', 'Optional PBIX file to load first')
-  .option('--model <name>', 'Anthropic model override (else env ANTHROPIC_MODEL or default chain)', '')
-  .option('--list-models', 'List available Anthropic models then exit', false)
+  // model selection is now automatic via latest listing; flags removed
   .option('--max-tokens <n>', 'Max tokens for LLM responses (env ANTHROPIC_MAX_TOKENS fallback, default 1000)', '')
   .option('--verbose', 'Verbose logging', false)
   .action(async (options) => {
